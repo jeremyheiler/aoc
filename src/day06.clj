@@ -22,7 +22,7 @@
   (let [table (vec (repeat size (vec (repeat size ".." ;;(if (>= size 26) ".." ".")
                                              ))))]
     (reduce (fn [table {:keys [label x y]}]
-              (assoc-in table [y x] "##" ;;label
+              (assoc-in table [y x] "  " ;;label
                         ))
             table
             coordinates)))
@@ -81,14 +81,16 @@
                                  table table
                                  areas areas]
                             (if x
-                              (let [closest-points (find-closest-points {:x x :y y} coordinates)]
-                                (if (= (count closest-points) 1)
-                                  (recur xs
-                                         (assoc-in table [y x] (:label (first closest-points)))
-                                         (-> areas
-                                             (update-in [(:label (first closest-points)) :area] (fnil inc 0))
-                                             (update-in [(:label (first closest-points)) :infinite?] #(or % (infinite? {:x x :y y} size)))))
-                                  (recur xs table areas)))
+                              (if (some #(= [x y] (xy-pair %)) coordinates)
+                                (recur xs table areas)
+                                (let [closest-points (find-closest-points {:x x :y y} coordinates)]
+                                  (if (= (count closest-points) 1)
+                                    (recur xs
+                                           (assoc-in table [y x] (:label (first closest-points)))
+                                           (-> areas
+                                               (update-in [(:label (first closest-points)) :area] (fnil inc 0))
+                                               (update-in [(:label (first closest-points)) :infinite?] #(or % (infinite? {:x x :y y} size)))))
+                                    (recur xs table areas))))
                               [table areas]))]
         
         (recur ys table areas))
