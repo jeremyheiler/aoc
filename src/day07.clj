@@ -62,6 +62,18 @@
        (update in-progress node dec)
        nil])))
 
+(defn part2-iterate-workers [base-seconds num-workers unused-deps in-progress]
+  (loop [unused-deps unused-deps
+         in-progress in-progress
+         [w & ws] (take num-workers (concat
+                                     (remove #(nil? (key %)) in-progress)
+                                     (cycle [[nil 0]])))
+         done []]
+    (if w
+      (let [[unused-deps in-progress done-val] (part2-handle-worker base-seconds unused-deps in-progress w)]
+        (recur unused-deps in-progress ws (conj done done-val)))
+      [unused-deps in-progress done])))
+
 (defn part2-answer [data base-seconds num-workers]
   (loop [unused-deps (build-deps data)
          in-progress {}
@@ -69,16 +81,7 @@
          answer []]
     (if (and (empty? unused-deps))
       [seconds (apply str answer)]
-      (let [[unused-deps in-progress done] (loop [unused-deps unused-deps
-                                                  in-progress in-progress
-                                                  [w & ws] (take num-workers (concat
-                                                                              (remove #(nil? (key %)) in-progress)
-                                                                              (cycle [[nil 0]])))
-                                                  done []]
-                                             (if w
-                                               (let [[unused-deps in-progress done-val] (part2-handle-worker base-seconds unused-deps in-progress w)]
-                                                 (recur unused-deps in-progress ws (conj done done-val)))
-                                               [unused-deps in-progress done]))]
+      (let [[unused-deps in-progress done] (part2-iterate-workers base-seconds num-workers unused-deps in-progress)]
         (recur unused-deps
                in-progress
                (inc seconds)
